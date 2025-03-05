@@ -1,0 +1,80 @@
+---
+title: "assignment2"
+output: html_document
+date: "2025-03-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# loading libraries and pacakges
+suppressPackageStartupMessages({
+  library(AnnotationHub) # to fetch genomes, annotations, etc.
+  library(ensembldb)     # to manipulate ensembl gene annotations
+  library(GenomicRanges) # data structure for genomic ranges 
+  library(epiwraps)      # visualization
+})
+```
+
+Using AnnotationHub to download annotations data:
+
+```{r}
+ah <- AnnotationHub()
+query1 <- query(ah, c("Mus musculus", "GRCm38", "EnsDb", "102"))
+head(query1)
+
+#The mouse (Mus Musculus) EnsDb object, version 102, genome build GRCm38
+mouse_ensdb <- ah[["AH89211"]]
+
+#The mouse genome sequence ( dna_sm ) in TwoBit/2bit format for GRCm38
+query2 <- query(ah, c("Mus musculus", "GRCm38", "dna_sm", "2bit"))
+head(query2)
+mouse_dna_sm <- ah[['AH53965']]
+
+#Loading the drosophila melanogaster genome sequence ( dna_sm ) in TwoBit/2bit format for BDGP6
+query3 <- query(ah, c("Drosophila melanogaster", "BDGP6", "dna_sm", "2bit"))
+head(query3)
+fly_dna_sm <-ah[['AH53865']]
+```
+
+-   How many different ensembl gene IDs and gene symbols are there for protein-coding genes?
+
+Check out different categories of genes in the mouse ensdb, extract the protein coding genes and retrieve the number of them.
+
+```{r}
+mouse_genes <- genes(mouse_ensdb)
+genes
+
+#How many different ensembl gene IDs and gene symbols are there for protein-coding genes?
+table(mouse_genes$gene_biotype)
+protein_coding_genes <- mouse_genes[mouse_genes$gene_biotype == "protein_coding"]
+print(length(unique(protein_coding_genes$gene_id)))
+```
+
+Plot the distribution of the (spliced) length of protein-coding transcripts
+
+```         
+-   (tip: this will require you to extract exons of protein-coding transcripts from the database, and split them by transcript, before summing the width of the exons of each transcript)
+```
+
+```{r}
+library(ggplot2)
+
+Transcripts <-exonsBy(mouse_ensdb, by = "tx", filter = TxBiotypeFilter("protein_coding"))
+transcript_lengths <- sum(width(Transcripts))
+
+# Convert to a data frame for ggplot2
+length_data <- data.frame(Length = transcript_lengths)
+
+# Plot the distribution
+ggplot(length_data, aes(x = Length)) +
+  geom_histogram(bins = 100, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Spliced Transcript Lengths",
+       x = "Transcript Length (bp)",
+       y = "Frequency") +
+  theme_minimal()
+
+
+```
