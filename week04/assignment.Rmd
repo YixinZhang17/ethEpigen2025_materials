@@ -1,0 +1,74 @@
+---
+title: "assignment4"
+output: html_document
+date: "2025-03-17"
+---
+
+```{r}
+suppressPackageStartupMessages({
+  library(AnnotationHub)
+  library(rtracklayer)
+  library(epiwraps)
+  library(GenomicRanges)
+})
+
+```
+
+# Loading Bed files
+
+```{r}
+p300_peak <- rtracklayer :: import("week4_homework/EP300.bigBed") 
+H3k4me1_peak <- rtracklayer::import ("week4_homework/H3k4me1.bigBed")
+H3k4me3_peak <- rtracklayer::import ("week4_homework/H3k4me3.bigBed")
+H3k27me3_peak <- rtracklayer::import ("week4_homework/H3k27me3.bigBed")
+H3k27ac_peak <- rtracklayer::import ("week4_homework/H3k27ac.bigBed")
+
+length(p300_peak) # check the number of peaks of P300 binding
+```
+
+# Peaks overlap
+
+```{r}
+overlaps1 <- findOverlaps(p300_peak, H3k4me1_peak) #use the finOverlaps function of GRanges
+overlap1_num <- length(unique(queryHits(overlaps1)))#if multiple H3k27me3 peaks overlap with the same p300 peak, we only want to count that particular p300 peak once. 
+proportion_overlap_p300_H3k4me1 <- overlap1_num/length(p300_peak)
+
+
+overlaps2 <- findOverlaps(p300_peak, H3k4me3_peak)
+proportion_overlap_p300_H3k4me3 <- length(unique(queryHits(overlaps2)))/length(p300_peak)
+
+
+overlaps3 <- findOverlaps(p300_peak, H3k27me3_peak)
+proportion_overlap_p300_H3k27me3 <- length(unique(queryHits(overlaps3)))/length(p300_peak)
+
+
+overlaps4 <- findOverlaps(p300_peak, H3k27ac_peak)
+proportion_overlap_p300_H3k27ac <- length(unique(queryHits(overlaps4)))/length(p300_peak)
+
+proportion_overlap_p300_H3k4me1
+proportion_overlap_p300_H3k4me3
+proportion_overlap_p300_H3k27me3
+proportion_overlap_p300_H3k27ac
+
+```
+
+Alternative way to interrogate overlaps and visualise the overlap coefficient
+
+```{r}
+#Using regionOverlaps function of epiwraps
+listOfRegions <- list(
+  p300 = p300_peak,
+  H3k4me1 = H3k4me1_peak,
+  H3k4me3 = H3k4me3_peak,
+  H3k27m23 = H3k27me3_peak,
+  H3k27ac = H3k27ac_peak
+)
+
+regionOverlaps(
+  listOfRegions,
+  ignore.strand = TRUE,
+  cluster = length(listOfRegions) > 2,  # cluster if there are more than 2 regions
+  color = viridis::plasma(100),
+  number_color = "black"
+)
+```
